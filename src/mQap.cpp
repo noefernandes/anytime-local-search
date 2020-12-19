@@ -12,7 +12,9 @@ Solution::Solution(){}
 Solution::Solution(Matrix& dist, Matrix& flow1, Matrix& flow2){
 	this->dist = dist;
 	this->flow1 = flow1;
-	this->flow2 = flow2; 
+	this->flow2 = flow2;
+
+	this->explored = false;
 
 
 	for(int i(0); i < n; i++){
@@ -42,7 +44,7 @@ void Solution::operator=(Solution b){
 }
 
 //Testando se this domina b
-bool Solution::operator<(Solution b){
+bool Solution::operator>(Solution b){
 	int greater_qtd = 0;
 	int smaller_qtd = 0;
 	
@@ -56,7 +58,7 @@ bool Solution::operator<(Solution b){
 		}
 	}
 
-	if(smaller_qtd > 0 and greater_qtd == 0){
+	if(greater_qtd > 0 and smaller_qtd == 0){
 		return true;
 	}
 
@@ -66,9 +68,9 @@ bool Solution::operator<(Solution b){
 bool Solution::is_non_dominated(Solution b){
 	bool non_dominated = false;
 
-	if((this->costs[0] < b.costs[0] and this->costs[0] > b.costs[0]) or
-		(this->costs[0] > b.costs[0] and this->costs[0] < b.costs[0]) or
-		(this->costs[0] == b.costs[0] and this->costs[0] == b.costs[0])){
+	if((this->costs[0] < b.costs[0] and this->costs[1] > b.costs[1]) or
+		(this->costs[0] > b.costs[0] and this->costs[1] < b.costs[1]) or
+		(this->costs[0] == b.costs[0] and this->costs[1] == b.costs[1])){
 		non_dominated = true;
 	}
 
@@ -88,7 +90,7 @@ Matrix& MQap::get_flow2_matrix(){ return flow2; }
 void MQap::read_instance(){
 	n = 30;
 	n_obj = 2;
-	n_sol = 10000;
+	n_sol = 5000;
 
 	dist.resize(n);
 	flow1.resize(n);
@@ -124,37 +126,63 @@ void MQap::read_instance(){
   	}
 }
 
+bool greater(Solution& a, Solution& b){
+	return a.costs[0] > b.costs[0];
+}
+
 std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	std::vector<Solution> solutions;
 	for(int i(0); i < n_sol; i++){
 		solutions.push_back(Solution(dist, flow1, flow2));
 	}
 
-	for(int i(0); i < n_sol; i++){
-		for(unsigned j(0); j < solutions[i].solution.size(); j++){
-			std::cout << solutions[i].solution[j] << " ";
-		}
-		std::cout << "\n\n";
-	}
+	//Ordena-se com base na primeira função objetivo
+	sort(solutions.begin(), solutions.end(), greater);
+	//Insere-se o primeiro elemento no conjunto não dominado
+	std::vector<Solution> s1;
+	s1.push_back(solutions[0]);
 
-	/*for(unsigned i(0); i < solutions.size() - 1; i++){
-		for(unsigned j(i); j < solutions.size(); j++){
-			if(not solutions[i].is_non_dominated(solutions[j])){
-				//std::cout << "entra\n";
-				if(solutions[i] < solutions[j]){
-					solutions.erase(solutions.begin() + j);
-				}else{
-					solutions.erase(solutions.begin() + i);
-				}
+
+	for(unsigned i(1); i < solutions.size(); i++){
+		//Verifica-se se o elemento do conjunto não dominado é dominado por alguma das soluções
+		for(unsigned j(0); j < s1.size(); j++){	
+			if(solutions[i] > s1[j]){
+				s1.erase(s1.begin() + j);
+				break;
 			}
 		}
-	}*/
 
-	std::cout << solutions.size();
+		//Testa-se se a solução é não dominada com relação a todos do conjunto não dominado
+		bool is_non_dominated = true;
+		for(unsigned j(0); j < s1.size(); j++){
+			if(not solutions[i].is_non_dominated(s1[j])){
+				is_non_dominated = false;
+				break;
+			}
+		}
 
-	return solutions;
+		if(is_non_dominated){
+			s1.push_back(solutions[i]);
+		}
+
+		if(s1.size() == 0){
+			s1.push_back(solutions[i]);
+		}
+
+		//std::cout << solutions[i].costs[0] << " " << solutions[i].costs[1] << "\n";
+	}
+
+
+	return s1;
 }
 
 void MQap::anytime_pareto_local_search(){
+
 	archive = generate_non_dominated_solutions();
+
+	for(unsigned i(0); i < archive.size(); i++){
+		//Encontrar a solução superior mais próxima a solução atual
+		//Encontrar a solução inferior mais próxima a solução atual
+	}
+
 }

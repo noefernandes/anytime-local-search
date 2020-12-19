@@ -19,7 +19,7 @@ struct Solution{
 	
 	void operator=(Solution b);
 	//Verifica se b é dominada pela solução atual
-	bool operator<(Solution b);
+	bool operator>(Solution b);
 	//Testa se as soluções são mutuamente não dominadas
     bool is_non_dominated(Solution b);
 
@@ -27,6 +27,8 @@ struct Solution{
 	std::vector<int> solution;
 	//Vetor de custos (resposta das funções objetivos)
 	std::vector<int> costs;
+	//Identifica como explorada ou não
+	bool explored;
 	//Matrix de distancia
 	Matrix dist;
 	//Matrix de fluxo 1
