@@ -19,9 +19,11 @@ struct Solution{
 	
 	void operator=(Solution b);
 	//Verifica se b é dominada pela solução atual
-	bool operator>(Solution b);
+	bool operator>(Solution& b);
 	//Testa se as soluções são mutuamente não dominadas
     bool is_non_dominated(Solution b);
+    //Faz uma troca no vetor solução
+    void swap_solution(int& a, int& b);
 
 	//Alocação escolhida
 	std::vector<int> solution;

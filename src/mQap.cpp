@@ -44,8 +44,8 @@ void Solution::operator=(Solution b){
 }
 
 //Testando se this domina b
-bool Solution::operator>(Solution b){
-	int greater_qtd = 0;
+bool Solution::operator>(Solution& b){
+	/*int greater_qtd = 0;
 	int smaller_qtd = 0;
 	
 	for(int i(0); i < n_obj; i++){
@@ -62,7 +62,10 @@ bool Solution::operator>(Solution b){
 		return true;
 	}
 
-	return false;
+	return false;*/
+	return (this->costs[0] > b.costs[0] and this->costs[1] > b.costs[1]) or
+			(this->costs[0] >= b.costs[0] and this->costs[1] > b.costs[1]) or
+			(this->costs[0] > b.costs[0] and this->costs[1] >= b.costs[1]); 
 }
 
 bool Solution::is_non_dominated(Solution b){
@@ -176,13 +179,150 @@ std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	return s1;
 }
 
-void MQap::anytime_pareto_local_search(){
+long ohvc(Solution& s1, Solution& s2){
+	//std::cout << s1.costs[0] << " <> " << s1.costs[1] << "\n";
+	//std::cout << s2.costs[0] << " <> " << s2.costs[1] << "\n";
+	//std::cout << s1.costs[0] << " - " << s2.costs[0] << " = " << (s1.costs[0] - s2.costs[0]) << "\n";
+	//std::cout << s2.costs[1] << " - " << s1.costs[1] << " = " << (s2.costs[1] - s1.costs[1]) << "\n\n";
+	return (s1.costs[0] - s2.costs[0])*(s2.costs[1] - s1.costs[1]);
+}
 
+void Solution::swap_solution(int& a, int& b){
+	int temp = a;
+	a = b;
+	b = temp;
+
+	int cost1 = 0;
+	int cost2 = 0;
+
+	for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			cost1 += this->flow1[this->solution[i]][this->solution[j]] * this->dist[i][j];
+			cost2 += this->flow2[this->solution[i]][this->solution[j]] * this->dist[i][j];
+		}
+	}
+	
+	this->costs[0] = cost1;
+	this->costs[1] = cost2;
+}
+
+
+Solution& first_improvement(Solution& current){
+
+	std::vector<int> aux = current.solution;
+	Solution neighbor(current.dist, current.flow1, current.flow2);
+
+	/*for(unsigned i(0); i < current.solution.size(); i++){
+		std::cout << current.solution[i] << " ";
+	}
+	std::cout << "\n\n";
+	
+	std::cout << current.costs[0] << " " << current.costs[1] << "\n";
+	*/
+
+	//neighbor.swap_solution(neighbor.solution[0], neighbor.solution[1]);
+
+	bool exit = false;
+	for(int i(0); i < n - 1; i++){
+		for(int j(i); j < n; j++){
+			neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+
+			std::cout << neighbor.costs[0] << " " << neighbor.costs[1] << "\n";		
+			std::cout << current.costs[0] << " " << current.costs[1] << "\n\n";
+
+			if(neighbor > current){
+				std::cout << "*********************\n";
+				current = neighbor;
+				exit = true;
+			}
+
+			neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+			
+			if(exit){
+				return current;
+			}
+		}	
+	}
+
+	for(unsigned i(0); i < current.solution.size(); i++){
+		std::cout << current.solution[i] << " ";
+	}
+	std::cout << "\n\n";
+	
+	std::cout << current.costs[0] << " " << current.costs[1] << "\n";
+
+	return current;
+}
+
+void MQap::anytime_pareto_local_search(){
+	//Gerando soluções não dominadas mutuamente.
 	archive = generate_non_dominated_solutions();
 
-	for(unsigned i(0); i < archive.size(); i++){
-		//Encontrar a solução superior mais próxima a solução atual
-		//Encontrar a solução inferior mais próxima a solução atual
-	}
+	std::vector<Solution> archive_aux(archive);
+
+	/*for(unsigned i(0); i < archive_aux.size(); i++){
+		std::cout << archive_aux[i].costs[0] << " " << archive_aux[i].costs[1] << "\n";
+	}*/
+
+	//do{
+		unsigned arch_size = archive.size();
+
+		//Vetor para armazenar os valores de ohi de cada solução.
+		std::vector<long> ohi;
+		ohi.resize(arch_size);
+
+		for(unsigned i(0); i < arch_size; i++){
+			int inf_index = -1;
+			int sup_index = -1;
+			//Encontrar a solução superior mais próxima a solução atual
+			for(unsigned j(0); j < arch_size; j++){
+				if(sup_index == -1 and archive[j].costs[1] > archive[i].costs[1]){
+					sup_index = j;
+				}
+				
+				if(sup_index != -1 and archive[sup_index].costs[1] > archive[j].costs[1] and 
+															archive[j].costs[1] > archive[i].costs[1]){
+					sup_index = j;
+				}		
+			}
+
+
+			//Encontrar a solução inferior mais próxima a solução atual
+			for(unsigned j(0); j < arch_size; j++){
+				if(inf_index == -1 and archive[j].costs[1] < archive[i].costs[1]){
+					inf_index = j;
+				}
+
+				if(inf_index != -1 and archive[inf_index].costs[1] < archive[j].costs[1] and 
+															archive[j].costs[1] < archive[i].costs[1]){
+					inf_index = j;
+				}
+				
+			}
+	 
+		
+			if(inf_index == -1){
+				ohi[i] = 2*ohvc(archive[sup_index], archive[i]);
+			}else if(sup_index == -1){
+				ohi[i] = 2*ohvc(archive[i], archive[inf_index]);
+			}else{
+				ohi[i] = ohvc(archive[sup_index], archive[i]) + ohvc(archive[i], archive[inf_index]);
+			}
+		}
+		
+		//Encontrando indice da solução com maior ohi
+		int max_index = 0;
+		for(unsigned i(0); i < arch_size; i++){
+			if(ohi[i] > ohi[max_index]){
+				max_index = i;
+			}
+		}
+
+		Solution current = archive[max_index];
+
+		first_improvement(current);
+
+	//}while(archive.size() != 0);
+
 
 }
