@@ -207,7 +207,7 @@ void Solution::swap_solution(int& a, int& b){
 }
 
 
-Solution& first_improvement(Solution& current){
+void MQap::improvement(Solution& current){
 
 	std::vector<int> aux = current.solution;
 	Solution neighbor(current.dist, current.flow1, current.flow2);
@@ -221,51 +221,100 @@ Solution& first_improvement(Solution& current){
 	*/
 
 	//neighbor.swap_solution(neighbor.solution[0], neighbor.solution[1]);
-
+	unsigned arch_size = archive.size();
 	bool exit = false;
 	for(int i(0); i < n - 1; i++){
-		for(int j(i); j < n; j++){
+		for(int j(i + 1); j < n; ++j){
 			neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 
-			std::cout << neighbor.costs[0] << " " << neighbor.costs[1] << "\n";		
-			std::cout << current.costs[0] << " " << current.costs[1] << "\n\n";
+			//std::cout << neighbor.costs[0] << " " << neighbor.costs[1] << "\n";		
+			//std::cout << current.costs[0] << " " << current.costs[1] << "\n\n";
+
+			/*for(int k(0); k < n; k++){
+				std::cout << neighbor.solution[k] << " ";
+			}
+			std::cout << "\n";
+			*/
 
 			if(neighbor > current){
-				std::cout << "*********************\n";
+				std::cout << "**************************************************************************\n";
+				for(unsigned k(0); k < arch_size; k++){
+					if(neighbor > archive[k]){
+						archive.erase(archive.begin() + k);
+						k--;
+						arch_size--;
+					}
+				}
 				current = neighbor;
+				archive.push_back(current);
+				arch_size++;
+				current.explored = true;
 				exit = true;
 			}
 
 			neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 			
 			if(exit){
-				return current;
+				return;
 			}
 		}	
 	}
 
-	for(unsigned i(0); i < current.solution.size(); i++){
+	/*for(unsigned i(0); i < current.solution.size(); i++){
 		std::cout << current.solution[i] << " ";
 	}
 	std::cout << "\n\n";
 	
 	std::cout << current.costs[0] << " " << current.costs[1] << "\n";
+	*/
 
-	return current;
+	neighbor = current;
+	arch_size = archive.size();
+	for(int i(0); i < n - 1; i++){
+		for(int j(i + 1); j < n; ++j){
+			neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+
+			bool non_dominated = true;
+			for(unsigned k(0); k < arch_size; k++){
+				if(not neighbor.is_non_dominated(archive[k])){
+					non_dominated = false;
+					break;
+				}
+			}
+
+			if(non_dominated){
+				//std::cout << "\n" << neighbor.costs[0] << " " << neighbor.costs[1] << "\n\n";
+				for(unsigned k(0); k < arch_size; k++){
+					//std::cout << archive[k].costs[0] << " " << archive[k].costs[1] << "\n";
+					if(neighbor > archive[k]){
+						archive.erase(archive.begin() + k);
+						k--;
+						arch_size--;
+					}
+				}
+		
+				archive.push_back(neighbor);
+				arch_size++;
+			}
+
+			neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+		}
+	}
+
+	current.explored = true;
 }
 
 void MQap::anytime_pareto_local_search(){
 	//Gerando soluções não dominadas mutuamente.
-	archive = generate_non_dominated_solutions();
+	archive0.reserve(10000);
+	archive.reserve(10000);
 
-	std::vector<Solution> archive_aux(archive);
+	archive0 = generate_non_dominated_solutions();
 
-	/*for(unsigned i(0); i < archive_aux.size(); i++){
-		std::cout << archive_aux[i].costs[0] << " " << archive_aux[i].costs[1] << "\n";
-	}*/
+	archive = archive0;
 
-	//do{
-		unsigned arch_size = archive.size();
+	do{
+		unsigned arch_size = archive0.size();
 
 		//Vetor para armazenar os valores de ohi de cada solução.
 		std::vector<long> ohi;
@@ -276,12 +325,12 @@ void MQap::anytime_pareto_local_search(){
 			int sup_index = -1;
 			//Encontrar a solução superior mais próxima a solução atual
 			for(unsigned j(0); j < arch_size; j++){
-				if(sup_index == -1 and archive[j].costs[1] > archive[i].costs[1]){
+				if(sup_index == -1 and archive0[j].costs[1] > archive0[i].costs[1]){
 					sup_index = j;
 				}
 				
-				if(sup_index != -1 and archive[sup_index].costs[1] > archive[j].costs[1] and 
-															archive[j].costs[1] > archive[i].costs[1]){
+				if(sup_index != -1 and archive0[sup_index].costs[1] > archive0[j].costs[1] and 
+															archive0[j].costs[1] > archive0[i].costs[1]){
 					sup_index = j;
 				}		
 			}
@@ -289,12 +338,12 @@ void MQap::anytime_pareto_local_search(){
 
 			//Encontrar a solução inferior mais próxima a solução atual
 			for(unsigned j(0); j < arch_size; j++){
-				if(inf_index == -1 and archive[j].costs[1] < archive[i].costs[1]){
+				if(inf_index == -1 and archive0[j].costs[1] < archive0[i].costs[1]){
 					inf_index = j;
 				}
 
-				if(inf_index != -1 and archive[inf_index].costs[1] < archive[j].costs[1] and 
-															archive[j].costs[1] < archive[i].costs[1]){
+				if(inf_index != -1 and archive0[inf_index].costs[1] < archive0[j].costs[1] and 
+															archive0[j].costs[1] < archive0[i].costs[1]){
 					inf_index = j;
 				}
 				
@@ -302,11 +351,11 @@ void MQap::anytime_pareto_local_search(){
 	 
 		
 			if(inf_index == -1){
-				ohi[i] = 2*ohvc(archive[sup_index], archive[i]);
+				ohi[i] = 2*ohvc(archive0[sup_index], archive0[i]);
 			}else if(sup_index == -1){
-				ohi[i] = 2*ohvc(archive[i], archive[inf_index]);
+				ohi[i] = 2*ohvc(archive0[i], archive0[inf_index]);
 			}else{
-				ohi[i] = ohvc(archive[sup_index], archive[i]) + ohvc(archive[i], archive[inf_index]);
+				ohi[i] = ohvc(archive0[sup_index], archive0[i]) + ohvc(archive0[i], archive0[inf_index]);
 			}
 		}
 		
@@ -318,11 +367,24 @@ void MQap::anytime_pareto_local_search(){
 			}
 		}
 
-		Solution current = archive[max_index];
+		//Solution current = archive0[max_index];
 
-		first_improvement(current);
+		//Tenta realizar primeiro o first_improvement, se não der
+		//certo realiza o best_improvement
+		improvement(archive[max_index]);
 
-	//}while(archive.size() != 0);
+		std::vector<Solution> temp;
+		for(unsigned i(0); i < archive.size(); i++){
+			if(archive[i].explored == false){
+				temp.push_back(archive[i]);
+			}
+		}
+
+		archive0 = temp;
+
+		std::cout << temp.size() << "/" << archive.size() << "\n";
+
+	}while(archive0.size() != 0);
 
 
 }

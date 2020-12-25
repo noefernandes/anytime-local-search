@@ -51,6 +51,7 @@ class MQap{
 		Matrix& get_flow1_matrix();
 		Matrix& get_flow2_matrix();
 
+		void improvement(Solution& current);
 		void anytime_pareto_local_search();
 		std::vector<Solution> generate_non_dominated_solutions();
 
@@ -59,6 +60,7 @@ class MQap{
 		Matrix flow1;
 		Matrix flow2;
 		std::vector<Solution> archive;
+		std::vector<Solution> archive0;
 		Solution best_solution;
 };
 
