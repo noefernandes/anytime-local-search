@@ -13,6 +13,7 @@ using Matrix = std::vector<std::vector<int>>;
 struct Solution{
 
 	Solution(Matrix& dist, Matrix& flow1, Matrix& flow2);
+	Solution(Matrix& dist, Matrix& flow1, Matrix& flow2, std::vector<int> aux);
 	Solution();
 
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -28,9 +29,11 @@ struct Solution{
 	//Alocação escolhida
 	std::vector<int> solution;
 	//Vetor de custos (resposta das funções objetivos)
-	std::vector<int> costs;
+	std::vector<long> costs;
 	//Identifica como explorada ou não
-	bool explored;
+	bool explored = false;
+	//Índice da solucao
+	int index;
 	//Matrix de distancia
 	Matrix dist;
 	//Matrix de fluxo 1

@@ -38,9 +38,34 @@ Solution::Solution(Matrix& dist, Matrix& flow1, Matrix& flow2){
 	this->costs[1] = cost2;
 }
 
+Solution::Solution(Matrix& dist, Matrix& flow1, Matrix& flow2, std::vector<int> aux){
+	this->dist = dist;
+	this->flow1 = flow1;
+	this->flow2 = flow2;
+	this->solution = aux;
+
+	this->explored = false;
+
+	this->costs.resize(n_obj);
+	
+	int cost1 = 0;
+	int cost2 = 0;
+
+	for(int i = 0; i < n; i++){
+		for(int j = 0; j < n; j++){
+			cost1 += this->flow1[this->solution[i]][this->solution[j]] * this->dist[i][j];
+			cost2 += this->flow2[this->solution[i]][this->solution[j]] * this->dist[i][j];
+		}
+	}
+	
+	this->costs[0] = cost1;
+	this->costs[1] = cost2;
+}
+
 void Solution::operator=(Solution b){
 	this->solution = b.solution;
 	this->costs = b.costs;
+	this->index = b.index;
 }
 
 //Testando se this domina b
@@ -136,7 +161,9 @@ bool greater(Solution& a, Solution& b){
 std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	std::vector<Solution> solutions;
 	for(int i(0); i < n_sol; i++){
-		solutions.push_back(Solution(dist, flow1, flow2));
+		Solution sol(dist, flow1, flow2);
+		sol.index = i;
+		solutions.push_back(sol);
 	}
 
 	//Ordena-se com base na primeira função objetivo
@@ -180,10 +207,6 @@ std::vector<Solution> MQap::generate_non_dominated_solutions(){
 }
 
 long ohvc(Solution& s1, Solution& s2){
-	//std::cout << s1.costs[0] << " <> " << s1.costs[1] << "\n";
-	//std::cout << s2.costs[0] << " <> " << s2.costs[1] << "\n";
-	//std::cout << s1.costs[0] << " - " << s2.costs[0] << " = " << (s1.costs[0] - s2.costs[0]) << "\n";
-	//std::cout << s2.costs[1] << " - " << s1.costs[1] << " = " << (s2.costs[1] - s1.costs[1]) << "\n\n";
 	return (s1.costs[0] - s2.costs[0])*(s2.costs[1] - s1.costs[1]);
 }
 
@@ -237,18 +260,10 @@ void MQap::improvement(Solution& current){
 			*/
 
 			if(neighbor > current){
-				std::cout << "**************************************************************************\n";
-				for(unsigned k(0); k < arch_size; k++){
-					if(neighbor > archive[k]){
-						archive.erase(archive.begin() + k);
-						k--;
-						arch_size--;
-					}
-				}
-				current = neighbor;
-				archive.push_back(current);
-				arch_size++;
+				std::cout << "******************************push1*********************************\n";
+				archive.push_back(neighbor);
 				current.explored = true;
+				arch_size++;
 				exit = true;
 			}
 
@@ -276,7 +291,7 @@ void MQap::improvement(Solution& current){
 
 			bool non_dominated = true;
 			for(unsigned k(0); k < arch_size; k++){
-				if(not neighbor.is_non_dominated(archive[k])){
+				if(archive[k] > neighbor){
 					non_dominated = false;
 					break;
 				}
@@ -292,7 +307,7 @@ void MQap::improvement(Solution& current){
 						arch_size--;
 					}
 				}
-		
+				std::cout << "%%%%%%%%%%%%%%%%%%%%%%%%%%%push2%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
 				archive.push_back(neighbor);
 				arch_size++;
 			}
@@ -319,6 +334,7 @@ void MQap::anytime_pareto_local_search(){
 		//Vetor para armazenar os valores de ohi de cada solução.
 		std::vector<long> ohi;
 		ohi.resize(arch_size);
+
 
 		for(unsigned i(0); i < arch_size; i++){
 			int inf_index = -1;
@@ -348,32 +364,62 @@ void MQap::anytime_pareto_local_search(){
 				}
 				
 			}
-	 
-		
-			if(inf_index == -1){
-				ohi[i] = 2*ohvc(archive0[sup_index], archive0[i]);
-			}else if(sup_index == -1){
-				ohi[i] = 2*ohvc(archive0[i], archive0[inf_index]);
-			}else{
-				ohi[i] = ohvc(archive0[sup_index], archive0[i]) + ohvc(archive0[i], archive0[inf_index]);
+
+			if(arch_size > 1){
+				if(inf_index == -1){
+					//std::cout << "*****1*****\n";
+					ohi[i] = 2*ohvc(archive0[sup_index], archive0[i]);
+				}else if(sup_index == -1){
+					//std::cout << "*****2*****\n";
+					ohi[i] = 2*ohvc(archive0[i], archive0[inf_index]);
+				}else{
+					//std::cout << "*****3*****\n";
+					ohi[i] = ohvc(archive0[sup_index], archive0[i]) + ohvc(archive0[i], archive0[inf_index]);
+				}
 			}
 		}
 		
 		//Encontrando indice da solução com maior ohi
 		int max_index = 0;
+		if(arch_size > 1){
+			for(unsigned i(0); i < arch_size; i++){ 
+				if(ohi[i] > ohi[max_index]){
+					max_index = i;
+				}
+			}
+		}else{
+			max_index = 0;
+		}
+
+		int search_index = archive0[max_index].index;
+		int current_index = -1;
+
 		for(unsigned i(0); i < arch_size; i++){
-			if(ohi[i] > ohi[max_index]){
-				max_index = i;
+			if(archive[i].index == search_index){
+				current_index = i;
 			}
 		}
 
-		//Solution current = archive0[max_index];
+		Solution neighbor(archive[current_index].dist, archive[current_index].flow1, archive[current_index].flow2,
+								 archive[current_index].solution);
+		
 
-		//Tenta realizar primeiro o first_improvement, se não der
-		//certo realiza o best_improvement
-		improvement(archive[max_index]);
+		for(int i(0); i < n - 1; i++){
+			for(int j(i + 1); j < n; ++j){
+				neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 
-		std::vector<Solution> temp;
+				neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+			}
+		}
+
+
+
+
+
+
+
+
+		/*std::vector<Solution> temp;
 		for(unsigned i(0); i < archive.size(); i++){
 			if(archive[i].explored == false){
 				temp.push_back(archive[i]);
@@ -381,8 +427,8 @@ void MQap::anytime_pareto_local_search(){
 		}
 
 		archive0 = temp;
-
-		std::cout << temp.size() << "/" << archive.size() << "\n";
+		*/
+		//std::cout << archive.size() << "fg\n";
 
 	}while(archive0.size() != 0);
 
