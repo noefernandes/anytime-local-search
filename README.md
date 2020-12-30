@@ -32,3 +32,7 @@ Todos esses passos se encontram no método anytime_pareto_local_search do arquiv
 
 ## Problema encontrados atualmente
 - O algoritmo aparentemente aceita mais soluções do que apaga do arquivo de forma que o algoritmo atualmente não para.
+
+## Como executar
+`g++ -Wall -std=c++11 src/main.cpp src/mQap.cpp -I include/`
+`./a.out`
