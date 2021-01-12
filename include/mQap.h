@@ -18,6 +18,9 @@ struct Solution{
 
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	
+	//Testa se as soluções tem os mesmo valores de custos
+	bool operator==(Solution& b);
+	//Realiza atribuição de soluções
 	void operator=(Solution b);
 	//Verifica se b é dominada pela solução atual
 	bool operator>(Solution& b);

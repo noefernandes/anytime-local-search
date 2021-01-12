@@ -97,6 +97,10 @@ bool Solution::operator>(Solution& b){
 			(this->costs[0] > b.costs[0] and this->costs[1] >= b.costs[1]); 
 }
 
+bool Solution::operator==(Solution& b){
+	return this->costs[0] == b.costs[0] and this->costs[1] == b.costs[1];
+}
+
 bool Solution::is_non_dominated(Solution b){
 	bool non_dominated = false;
 
@@ -166,8 +170,7 @@ std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	std::vector<Solution> solutions;
 	for(int i(0); i < n_sol; i++){
 		Solution sol(dist, flow1, flow2);
-		//sol.index = i;
-		solutions.push_back(sol);
+		solutions.push_back(sol);;
 	}
 
 	//Ordena-se com base na primeira função objetivo
@@ -176,34 +179,50 @@ std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	std::vector<Solution> s1;
 	s1.push_back(solutions[0]);
 
+	/*for(unsigned i(0); i < solutions.size(); i++){
+		std::cout << "\n" << solutions[i].costs[0] << " " << solutions[i].costs[1] << "\n";
+	}
+
+	std::cout << "----------------------------------\n";
+	*/
 
 	for(unsigned i(1); i < solutions.size(); i++){
 		//Verifica-se se o elemento do conjunto não dominado é dominado por alguma das soluções
 		for(unsigned j(0); j < s1.size(); j++){	
-			if(solutions[i] > s1[j]){
+			if(solutions[i] > s1[j] or solutions[i] == s1[j]){
 				s1.erase(s1.begin() + j);
-				break;
+				//std::cout << "op 1\n";
+				j--;
 			}
 		}
 
 		//Testa-se se a solução é não dominada com relação a todos do conjunto não dominado
 		bool is_non_dominated = true;
 		for(unsigned j(0); j < s1.size(); j++){
-			if(not solutions[i].is_non_dominated(s1[j])){
+			if(s1[j] > solutions[i]){
 				is_non_dominated = false;
+				//std::cout << "op 2\n";
 				break;
 			}
 		}
 
 		if(is_non_dominated){
 			s1.push_back(solutions[i]);
+			//std::cout << "op 2 add\n";
 		}
 
 		if(s1.size() == 0){
 			s1.push_back(solutions[i]);
+			//std::cout << "op 3\n";
 		}
 
 		//std::cout << solutions[i].costs[0] << " " << solutions[i].costs[1] << "\n";
+	}
+
+
+	//std::cout << "---------------------------\n";
+	for(unsigned i(0); i < s1.size(); i++){
+		//std::cout << "\n" << s1[i].costs[0] << " " << s1[i].costs[1] << "\n";
 	}
 
 
@@ -244,15 +263,24 @@ void MQap::anytime_pareto_local_search(){
 	int cont = 0;
 	for(unsigned i(0); i < archive0.size(); i++){
 		archive0[i].index = cont++;
-		//std::cout << archive[i].index << " ";
 	}
 
 	archive = archive0;
 
+	for(unsigned i(0); i < archive0.size(); i++){
+		/*for(unsigned j(0); j < archive0[0].solution.size(); j++){
+			std::cout << archive0[i].solution[j] << " ";
+		}*/
+		std::cout << "\n" << archive0[i].index << " " <<  archive0[i].costs[0] << " " << archive0[i].costs[1] << "\n";
+	}
+
+
+	std::cout << "\n\n-------------------------------------\n\n";
+
 	do{
 		unsigned arch_size = archive0.size();
 
-		/*//Vetor para armazenar os valores de ohi de cada solução.
+		//Vetor para armazenar os valores de ohi de cada solução.
 		std::vector<long> ohi;
 		ohi.resize(arch_size);
 
@@ -288,13 +316,10 @@ void MQap::anytime_pareto_local_search(){
 
 			if(arch_size > 1){
 				if(inf_index == -1){
-					//std::cout << "*****1*****\n";
 					ohi[i] = 2*ohvc(archive0[sup_index], archive0[i]);
 				}else if(sup_index == -1){
-					//std::cout << "*****2*****\n";
 					ohi[i] = 2*ohvc(archive0[i], archive0[inf_index]);
 				}else{
-					//std::cout << "*****3*****\n";
 					ohi[i] = ohvc(archive0[sup_index], archive0[i]) + ohvc(archive0[i], archive0[inf_index]);
 				}
 			}
@@ -312,40 +337,17 @@ void MQap::anytime_pareto_local_search(){
 		}else{
 			max_index = 0;
 		}
+				
 
 
-		int search_index = archive0[max_index].index;
-		int current_index = -1;
 
-		for(unsigned i(0); i < arch_size; i++){
-			if(archive[i].index == search_index){
-				current_index = i;
-			}
-		}
 
-		//std::cout << current_index << " -------------------------\n";
-		for(unsigned i(0); i < archive0.size(); i++){
-			for(unsigned j(0); j < n; j++){
-				std::cout << archive0[i].solution[j] << " ";
-			}
-			std::cout << "   " << archive0[i].costs[0] << " " << archive0[i].costs[1] << "\n";
-		}
-
-		std::cout << max_index << "\n\n";
-
-		//Solução com maior ohi
-		Solution current(archive[current_index].dist, archive[current_index].flow1, archive[current_index].flow2,
-								 archive[current_index].solution);
-
-		archive[current_index].explored = true;
-
-		//Solução que gerará a vizinhança
+		Solution current;
+		current = archive0[max_index];
 		Solution neighbor;
-		neighbor = current;		
+		neighbor = current;
 
-		//std::cout << current_index << "   |   " << archive0.size() << "\n";
-		*/
-		std::random_device rd;
+		/*std::random_device rd;
     	std::mt19937 gen(rd());
     	std::uniform_int_distribution<> dis(0, arch_size - 1);
     	int index = dis(gen);
@@ -353,12 +355,8 @@ void MQap::anytime_pareto_local_search(){
 		Solution current;
 		current = archive0[index];
 		Solution neighbor;
-		neighbor = current;
+		neighbor = current;*/
 
-		//std::cout << index << "\n";
-		//std::cout << "Tamanho do conj: " << archive0.size() << "\n";
-		//std::cout << "Primeiro: "<< neighbor.index << " - "  << neighbor.costs[0] << " " << neighbor.costs[1]<< "   " << neighbor.explored << "\n\n";
-		
 		//Realizando busca na vizinhança por vizinhos que não são diminados pelo arquivo
 		//E retirando do arquivos aqueles dominados pelos vizinhos inseridos
 		for(int i(0); i < n - 1; i++){
@@ -366,8 +364,10 @@ void MQap::anytime_pareto_local_search(){
 				neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 				//Se alguma solução no arquivo domina o vizinho atual, não inseri-lo no arquivo.
 				bool non_dominated = true;
-				for(unsigned k(0); k < archive.size(); k++){
-					if(archive[k] > neighbor){
+
+				arch_size = archive.size();
+				for(unsigned k(0); k < arch_size; k++){
+					if(archive[k] > neighbor or archive[k] == neighbor){
 						non_dominated = false;
 						break;
 					}
@@ -375,41 +375,29 @@ void MQap::anytime_pareto_local_search(){
 
 				//Se a solução é não dominada, retirar os dominados por ela.
 				if(non_dominated){
-					//std::cout << "\n" << neighbor.index << " - " << neighbor.costs[0] << " " << neighbor.costs[1] << "   " << neighbor.explored << "\n\n";
-					bool entrou = false;
-					for(unsigned k(0); k < archive.size(); k++){
+					for(unsigned k(0); k < arch_size; k++){
 						if(neighbor > archive[k]){
-							//std::cout << archive[k].index << " - " << archive[k].costs[0] << " " << archive[k].costs[1] << "   " << archive[k].explored << "<-\n";
-					
-							entrou = true;
+							//std::cout << archive[k].index << " " << archive[k].costs[0] << " " << archive[k].costs[1] << " " << archive[k].explored << "<-\n";
 							archive.erase(archive.begin() + k);
 							k--;
-						}/*else{
-							std::cout << archive[k].index << " - " << archive[k].costs[0] << " " << archive[k].costs[1] << "   " << archive[k].explored << "\n";
-					
-						}*/
+							arch_size--;
+						}
 					}
+
 
 					Solution inserted;
 					inserted = neighbor;
-					inserted.index = cont++;
+					inserted.index = archive[arch_size - 1].index + 1;
 					archive.push_back(inserted);
-
-					/*
-					if(entrou){
-						std::cout << "inserido: " << inserted.index << " - " << inserted.costs[0] << " " << inserted.costs[1] << "   " << inserted.explored << "<-\n";
-					}else{
-						std::cout << "inserido: " << inserted.index << " - " << inserted.costs[0] << " " << inserted.costs[1] << "   " << inserted.explored << "\n";	
-					}*/
+					arch_size++;
 				}
 
 				neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 			}
 		}
 
-		//std::cout << "----------------------------------------------------------\n";
 		//Procurando indice para marcar como explorado
-		for(unsigned i(0); i < archive.size(); i++){
+		for(unsigned i(0); i < arch_size; i++){
 			if(archive[i].index == current.index){
 				archive[i].explored = true;
 			}
@@ -417,16 +405,22 @@ void MQap::anytime_pareto_local_search(){
 
 		//Filtrando soluções não exploradas
 		std::vector<Solution> temp;
-		for(unsigned i(0); i < archive.size(); i++){
+		for(unsigned i(0); i < arch_size; i++){
 			if(archive[i].explored == false){
 				temp.push_back(archive[i]);
 			}
 		}
 
 		archive0 = temp;
-		//std::cout << temp.size() <<  "/" << archive.size() << "\n";
+
+		
+		//std::cout << "\n" << temp.size() <<  "/" << archive.size() << "\n";
+
 
 	}while(archive0.size() != 0);
 
+	for(unsigned i(0); i < archive.size(); i++){
+		std::cout << archive[i].index << " " << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
+	}
 
 }
