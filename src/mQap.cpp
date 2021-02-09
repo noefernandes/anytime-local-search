@@ -277,13 +277,15 @@ void MQap::anytime_pareto_local_search(){
 
 	std::cout << "\n\n-------------------------------------\n\n";
 
+	//Flag que verifica qual tipo de exploracao fazer: first (1), best (2)  
+	int exploration = 1;
+
 	do{
 		unsigned arch_size = archive0.size();
 
 		//Vetor para armazenar os valores de ohi de cada solução.
 		std::vector<long> ohi;
 		ohi.resize(arch_size);
-
 
 		for(unsigned i(0); i < arch_size; i++){
 			int inf_index = -1;
@@ -357,42 +359,112 @@ void MQap::anytime_pareto_local_search(){
 		Solution neighbor;
 		neighbor = current;*/
 
-		//Realizando busca na vizinhança por vizinhos que não são diminados pelo arquivo
-		//E retirando do arquivos aqueles dominados pelos vizinhos inseridos
-		for(int i(0); i < n - 1; i++){
-			for(int j(i + 1); j < n; ++j){
-				neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
-				//Se alguma solução no arquivo domina o vizinho atual, não inseri-lo no arquivo.
-				bool non_dominated = true;
+		if(exploration == 1){
+			for(int i(0); i < n - 1; i++){
+				for(int j(i + 1); j < n; ++j){
+					neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 
-				arch_size = archive.size();
-				for(unsigned k(0); k < arch_size; k++){
-					if(archive[k] > neighbor or archive[k] == neighbor){
-						non_dominated = false;
-						break;
-					}
-				}
-
-				//Se a solução é não dominada, retirar os dominados por ela.
-				if(non_dominated){
+					arch_size = archive.size();
 					for(unsigned k(0); k < arch_size; k++){
 						if(neighbor > archive[k]){
-							//std::cout << archive[k].index << " " << archive[k].costs[0] << " " << archive[k].costs[1] << " " << archive[k].explored << "<-\n";
-							archive.erase(archive.begin() + k);
-							k--;
-							arch_size--;
+							for(unsigned l(0); l < arch_size; l++){
+								if(neighbor > archive[l]){
+								
+									archive.erase(archive.begin() + l);
+									l--;
+									arch_size--;
+								}
+							}
+
+
+							Solution inserted;
+							inserted = neighbor;
+							inserted.index = archive[arch_size - 1].index + 1;
+							archive.push_back(inserted);
+							arch_size++;		
+							break;
 						}
 					}
 
-
-					Solution inserted;
-					inserted = neighbor;
-					inserted.index = archive[arch_size - 1].index + 1;
-					archive.push_back(inserted);
-					arch_size++;
+					neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
 				}
+			}
 
-				neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+			for(int i(0); i < n - 1; i++){
+				for(int j(i + 1); j < n; ++j){
+					neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+					//Se alguma solução no arquivo domina o vizinho atual, não inseri-lo no arquivo.
+					bool non_dominated = true;
+
+					arch_size = archive.size();
+					for(unsigned k(0); k < arch_size; k++){
+						if(archive[k] > neighbor or archive[k] == neighbor){
+							non_dominated = false;
+							break;
+						}
+					}
+
+					//Se a solução é não dominada, retirar os dominados por ela.
+					if(non_dominated){
+						for(unsigned k(0); k < arch_size; k++){
+							if(neighbor > archive[k]){
+								//std::cout << archive[k].index << " " << archive[k].costs[0] << " " << archive[k].costs[1] << " " << archive[k].explored << "<-\n";
+								archive.erase(archive.begin() + k);
+								k--;
+								arch_size--;
+							}
+						}
+
+
+						Solution inserted;
+						inserted = neighbor;
+						inserted.index = archive[arch_size - 1].index + 1;
+						archive.push_back(inserted);
+						arch_size++;
+					}
+
+					neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+				}
+			}
+
+		}else{
+			//Realizando busca na vizinhança por vizinhos que não são diminados pelo arquivo
+			//E retirando do arquivos aqueles dominados pelos vizinhos inseridos
+			for(int i(0); i < n - 1; i++){
+				for(int j(i + 1); j < n; ++j){
+					neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+					//Se alguma solução no arquivo domina o vizinho atual, não inseri-lo no arquivo.
+					bool non_dominated = true;
+
+					arch_size = archive.size();
+					for(unsigned k(0); k < arch_size; k++){
+						if(archive[k] > neighbor or archive[k] == neighbor){
+							non_dominated = false;
+							break;
+						}
+					}
+
+					//Se a solução é não dominada, retirar os dominados por ela.
+					if(non_dominated){
+						for(unsigned k(0); k < arch_size; k++){
+							if(neighbor > archive[k]){
+								//std::cout << archive[k].index << " " << archive[k].costs[0] << " " << archive[k].costs[1] << " " << archive[k].explored << "<-\n";
+								archive.erase(archive.begin() + k);
+								k--;
+								arch_size--;
+							}
+						}
+
+
+						Solution inserted;
+						inserted = neighbor;
+						inserted.index = archive[arch_size - 1].index + 1;
+						archive.push_back(inserted);
+						arch_size++;
+					}
+
+					neighbor.swap_solution(neighbor.solution[i], neighbor.solution[j]);
+				}
 			}
 		}
 
@@ -412,9 +484,16 @@ void MQap::anytime_pareto_local_search(){
 		}
 
 		archive0 = temp;
-
 		
 		//std::cout << "\n" << temp.size() <<  "/" << archive.size() << "\n";
+
+		if(archive0.size() == 0 and exploration == 1){
+			exploration = 2;
+
+			for(unsigned i(0); i < arch_size; i++){
+				archive[i].explored = false;
+			}
+		}
 
 
 	}while(archive0.size() != 0);
