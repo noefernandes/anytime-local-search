@@ -73,7 +73,7 @@ void Solution::operator=(Solution b){
 }
 
 //Testando se this domina b
-bool Solution::operator>(Solution& b){
+bool Solution::operator<(Solution& b){
 	/*int greater_qtd = 0;
 	int smaller_qtd = 0;
 	
@@ -92,15 +92,16 @@ bool Solution::operator>(Solution& b){
 	}
 
 	return false;*/
-	return (this->costs[0] > b.costs[0] and this->costs[1] > b.costs[1]) or
-			(this->costs[0] >= b.costs[0] and this->costs[1] > b.costs[1]) or
-			(this->costs[0] > b.costs[0] and this->costs[1] >= b.costs[1]); 
+	return (this->costs[0] < b.costs[0] and this->costs[1] < b.costs[1]) or
+			(this->costs[0] <= b.costs[0] and this->costs[1] < b.costs[1]) or
+			(this->costs[0] < b.costs[0] and this->costs[1] <= b.costs[1]); 
 }
 
 bool Solution::operator==(Solution& b){
 	return this->costs[0] == b.costs[0] and this->costs[1] == b.costs[1];
 }
 
+/*
 bool Solution::is_non_dominated(Solution b){
 	bool non_dominated = false;
 
@@ -112,6 +113,7 @@ bool Solution::is_non_dominated(Solution b){
 
 	return non_dominated;
 }
+*/
 
 /***********************************************************************************************/
 
@@ -189,7 +191,7 @@ std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	for(unsigned i(1); i < solutions.size(); i++){
 		//Verifica-se se o elemento do conjunto não dominado é dominado por alguma das soluções
 		for(unsigned j(0); j < s1.size(); j++){	
-			if(solutions[i] > s1[j] or solutions[i] == s1[j]){
+			if(solutions[i] < s1[j] or solutions[i] == s1[j]){
 				s1.erase(s1.begin() + j);
 				//std::cout << "op 1\n";
 				j--;
@@ -199,7 +201,7 @@ std::vector<Solution> MQap::generate_non_dominated_solutions(){
 		//Testa-se se a solução é não dominada com relação a todos do conjunto não dominado
 		bool is_non_dominated = true;
 		for(unsigned j(0); j < s1.size(); j++){
-			if(s1[j] > solutions[i]){
+			if(s1[j] < solutions[i]){
 				is_non_dominated = false;
 				//std::cout << "op 2\n";
 				break;
@@ -367,7 +369,7 @@ void MQap::anytime_pareto_local_search(){
 
 				arch_size = archive.size();
 				for(unsigned k(0); k < arch_size; k++){
-					if(archive[k] > neighbor or archive[k] == neighbor){
+					if(archive[k] < neighbor or archive[k] == neighbor){
 						non_dominated = false;
 						break;
 					}
@@ -376,7 +378,7 @@ void MQap::anytime_pareto_local_search(){
 				//Se a solução é não dominada, retirar os dominados por ela.
 				if(non_dominated){
 					for(unsigned k(0); k < arch_size; k++){
-						if(neighbor > archive[k]){
+						if(neighbor < archive[k]){
 							//std::cout << archive[k].index << " " << archive[k].costs[0] << " " << archive[k].costs[1] << " " << archive[k].explored << "<-\n";
 							archive.erase(archive.begin() + k);
 							k--;
