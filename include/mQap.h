@@ -23,7 +23,7 @@ struct Solution{
 	//Realiza atribuição de soluções
 	void operator=(Solution b);
 	//Verifica se b é dominada pela solução atual
-	bool operator>(Solution& b);
+	bool operator<(Solution& b);
 	//Testa se as soluções são mutuamente não dominadas
     bool is_non_dominated(Solution b);
     //Faz uma troca no vetor solução
@@ -58,6 +58,8 @@ class MQap{
 		Matrix& get_flow2_matrix();
 
 		void improvement(Solution& current);
+		void apply_first_exploration();
+		void apply_best_exploration();
 		void anytime_pareto_local_search();
 		std::vector<Solution> generate_non_dominated_solutions();
 
