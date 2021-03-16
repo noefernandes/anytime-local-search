@@ -320,22 +320,11 @@ void MQap::apply_first_exploration(){
 				
 
 
-
-
 		Solution current;
 		current = archive0[max_index];
 		Solution neighbor;
 		neighbor = current;
 
-		/*std::random_device rd;
-    	std::mt19937 gen(rd());
-    	std::uniform_int_distribution<> dis(0, arch_size - 1);
-    	int index = dis(gen);
-
-		Solution current;
-		current = archive0[index];
-		Solution neighbor;
-		neighbor = current;*/
 
 		//Testa se encontrou uma solucao que domina a atual, senao aceita-se nao dominados
 		bool first = false;
@@ -433,7 +422,7 @@ void MQap::apply_first_exploration(){
 		//std::cout << "\n" << temp.size() <<  "/" << archive.size() << "\n";
 
 
-		std::cout << "tamanho: " << archive0.size() << "\n";
+		//std::cout << "tamanho: " << archive0.size() << "\n";
 
 	}while(archive0.size() != 0);
 
