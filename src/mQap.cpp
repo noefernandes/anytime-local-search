@@ -598,3 +598,48 @@ void MQap::anytime_pareto_local_search(){
 	}
 
 }
+
+std::vector<Solution>& MQap::path_relinking(){
+	int arch_size = archive.size();
+
+	for(int i(0); i < arch_size; i++){
+		for(int j(0); j < arch_size; j++){
+			
+			if(i != j){	
+				
+				Solution candidate;
+				Solution last_solution;
+				candidate = archive[i];
+				last_solution = archive[j];
+				std::vector<Solution> pool;
+				
+				for (int k = 0; k < n; k++){
+					
+					if(candidate[k] != last_solution[k]){
+						//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
+						for (int l = k; l < n; l++){
+							if(candidate[l] == last_solution[k]){
+								candidate.swap_solution(candidate[k],candidate[l]);
+							}
+						}
+					}
+					
+					if( is_non_dominated(candidate) ){
+						pool.push_back(candidate);
+					}
+				}
+
+				for(int k(0); k < poll.size(); k++){
+					archive.push_back(pool[k]);
+				}
+
+				for(int k(0); k < archive.size(); k++){
+					if(archive[k].is_dominated()){
+						archive.erase(k);
+						k--;
+					}
+				}
+			}
+		}
+	}
+}
