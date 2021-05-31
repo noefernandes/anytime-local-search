@@ -60,9 +60,10 @@ class MQap{
 		void improvement(Solution& current);
 		void apply_first_exploration();
 		void apply_best_exploration();
-		anytime_pareto_local_search();
+		void anytime_pareto_local_search();
 		std::vector<Solution> generate_non_dominated_solutions();
-		std::vector<Solution>& path_relinking();
+		void path_relinking();
+		bool is_dominated_by_archive(Solution& solution, int arch_size);
 
 	private:
 		Matrix dist;

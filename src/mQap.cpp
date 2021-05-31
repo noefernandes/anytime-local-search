@@ -599,10 +599,22 @@ void MQap::anytime_pareto_local_search(){
 
 }
 
-std::vector<Solution>& MQap::path_relinking(){
+bool MQap::is_dominated_by_archive(Solution& solution, int arch_size){
+	for(int i(0); i < arch_size; i++){
+		if(archive[i] < solution){
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void MQap::path_relinking(){
+	anytime_pareto_local_search();
 	int arch_size = archive.size();
 
 	for(int i(0); i < arch_size; i++){
+		std::vector<Solution> pool;
 		for(int j(0); j < arch_size; j++){
 			
 			if(i != j){	
@@ -611,35 +623,40 @@ std::vector<Solution>& MQap::path_relinking(){
 				Solution last_solution;
 				candidate = archive[i];
 				last_solution = archive[j];
-				std::vector<Solution> pool;
 				
 				for (int k = 0; k < n; k++){
 					
-					if(candidate[k] != last_solution[k]){
+					if(candidate.solution[k] != last_solution.solution[k]){
 						//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
 						for (int l = k; l < n; l++){
-							if(candidate[l] == last_solution[k]){
-								candidate.swap_solution(candidate[k],candidate[l]);
+							if(candidate.solution[l] == last_solution.solution[k]){
+								candidate.swap_solution(candidate.solution[k], candidate.solution[l]);
 							}
 						}
-					}
-					
-					if( is_non_dominated(candidate) ){
-						pool.push_back(candidate);
-					}
-				}
 
-				for(int k(0); k < poll.size(); k++){
-					archive.push_back(pool[k]);
-				}
-
-				for(int k(0); k < archive.size(); k++){
-					if(archive[k].is_dominated()){
-						archive.erase(k);
-						k--;
+						if(not is_dominated_by_archive(candidate, arch_size)){
+							
+							pool.push_back(candidate);
+						}
 					}
 				}
 			}
 		}
+
+		for(unsigned k(0); k < pool.size(); k++){
+			archive.push_back(pool[k]);
+			arch_size++;
+		}
+
+		for(int k(0); k < arch_size; k++){
+			if(is_dominated_by_archive(archive[k], arch_size)){
+				archive.erase(archive.begin() + k);
+				arch_size--;
+				k--;
+			}
+		}
+
+		std::cout << archive.size() <<"-------------------------------- sai\n";
 	}
+	
 }

@@ -13,8 +13,8 @@ int main(int argc, char *argv[]){
 	for(Solution s: v)
 		std::cout << s.costs[0] << " " << s.costs[1] << "\n";
 	*/
-	for(int i = 0; i < 30; i++)
-		mQap.anytime_pareto_local_search();
+	//for(int i = 0; i < 30; i++)
+		mQap.path_relinking();
 
 	
 }
