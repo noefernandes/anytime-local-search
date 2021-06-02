@@ -14,7 +14,7 @@ int main(int argc, char *argv[]){
 		std::cout << s.costs[0] << " " << s.costs[1] << "\n";
 	*/
 	//for(int i = 0; i < 30; i++)
-		mQap.path_relinking();
-
+		//mQap.path_relinking();
+	mQap.path_relinking();
 	
 }

@@ -431,6 +431,8 @@ void MQap::apply_first_exploration(){
 	}
 
 	archive0 = archive;
+
+	//std::cout << "\nentra1----\n";
 }
 
 void MQap::apply_best_exploration(){
@@ -560,7 +562,8 @@ void MQap::apply_best_exploration(){
 
 
 	}while(archive0.size() != 0);
-			
+	
+	//std::cout << "\nentra2----\n";
 }
 
 void MQap::anytime_pareto_local_search(){
@@ -592,19 +595,42 @@ void MQap::anytime_pareto_local_search(){
 	apply_best_exploration();
 
 	
-
+	std::cout << "--------------Começo---------------\n";
 	for(unsigned i(0); i < archive.size(); i++){
 		std::cout << archive[i].index << " " << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
 	}
+	std::cout << "--------------Fim---------------\n";
+	std::cout << archive.size() << "\n";
 
 }
 
-bool MQap::is_dominated_by_archive(Solution& solution, int arch_size){
+//Testa se a solução atual do arquivo se tornou dominada por alguma outra
+bool MQap::is_dominated_by_archive_post_processing(Solution& solution, int arch_size){
 	for(int i(0); i < arch_size; i++){
-		if(archive[i] < solution){
+		if((archive[i].costs[0] < solution.costs[0] and archive[i].costs[1] < solution.costs[1]) or
+		(archive[i].costs[0] == solution.costs[0] and archive[i].costs[1] < solution.costs[1]) or
+		(archive[i].costs[0] < solution.costs[0] and archive[i].costs[1] == solution.costs[1])){
 			return true;
 		}
 	}
+
+	return false;
+}
+
+bool MQap::has_equal_on_archive(Solution& solution, int arch_size){
+	for(int i(0); i < arch_size; i++){
+		int count = 0;
+		for(int j(0); j < n; j++){
+			if(archive[i].solution[j] == solution.solution[j]){
+				count++;
+			}
+		}
+		if(count == n){
+			return true;
+		}
+	}
+
+	//std::cout << "<----- " << solution.costs[0] << " " << solution.costs[1] << "\n";
 
 	return false;
 }
@@ -614,49 +640,69 @@ void MQap::path_relinking(){
 	int arch_size = archive.size();
 
 	for(int i(0); i < arch_size; i++){
-		std::vector<Solution> pool;
 		for(int j(0); j < arch_size; j++){
 			
 			if(i != j){	
-				
+				std::vector<Solution> pool;
 				Solution candidate;
 				Solution last_solution;
 				candidate = archive[i];
 				last_solution = archive[j];
 				
 				for (int k = 0; k < n; k++){
-					
 					if(candidate.solution[k] != last_solution.solution[k]){
+						//std::cout << "*************************************\n";
 						//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
 						for (int l = k; l < n; l++){
 							if(candidate.solution[l] == last_solution.solution[k]){
 								candidate.swap_solution(candidate.solution[k], candidate.solution[l]);
+								//std::cout << "---" << candidate.index << " " << candidate.costs[0] << " " << candidate.costs[1] << "\n";
+								//Armazenando todos as soluções intermediárias.
+								pool.push_back(candidate);
 							}
 						}
 
-						if(not is_dominated_by_archive(candidate, arch_size)){
+						/*if(not is_dominated_by_archive(candidate, arch_size)){
 							
 							pool.push_back(candidate);
-						}
+						}*/
+						//std::cout << "*************************************\n";
 					}
 				}
+			
+			
+				for(unsigned k(0); k < pool.size(); k++){
+					if(not has_equal_on_archive(pool[k], arch_size)){
+						archive.push_back(pool[k]);
+						arch_size++;
+					}
+				}
+
+				/*std::cout << "\ntamanho: " << archive.size() << "\n";
+				for(unsigned k(0); k < pool.size(); k++){
+					std::cout << "---" << pool[i].index << " " << pool[i].costs[0] << " " << pool[i].costs[1] << "\n";
+				}*/
+
+				for(int k(0); k < arch_size; k++){
+					if(is_dominated_by_archive_post_processing(archive[k], arch_size)){
+						//std::cout << "\napaga" << "\n";
+						archive.erase(archive.begin() + k);
+						arch_size--;
+						k--;
+					}
+				}
+
+				//std::cout << archive.size() <<"<<<<<<<<<<<<<<<<<<<<<<<<<\n";
 			}
 		}
-
-		for(unsigned k(0); k < pool.size(); k++){
-			archive.push_back(pool[k]);
-			arch_size++;
-		}
-
-		for(int k(0); k < arch_size; k++){
-			if(is_dominated_by_archive(archive[k], arch_size)){
-				archive.erase(archive.begin() + k);
-				arch_size--;
-				k--;
-			}
-		}
-
-		std::cout << archive.size() <<"-------------------------------- sai\n";
+		
 	}
+
+	std::cout << "\n";
+	for(unsigned i(0); i < archive.size(); i++){
+		std::cout << archive[i].index << " " << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
+	}
+
+	std::cout << archive.size() << "\n";
 	
 }

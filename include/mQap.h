@@ -63,7 +63,8 @@ class MQap{
 		void anytime_pareto_local_search();
 		std::vector<Solution> generate_non_dominated_solutions();
 		void path_relinking();
-		bool is_dominated_by_archive(Solution& solution, int arch_size);
+		bool is_dominated_by_archive_post_processing(Solution& solution, int arch_size);
+		bool has_equal_on_archive(Solution& solution, int arch_size);
 
 	private:
 		Matrix dist;
