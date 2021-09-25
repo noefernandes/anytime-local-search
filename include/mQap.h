@@ -50,7 +50,7 @@ class MQap{
 	public:
 		MQap();
 
-		void read_instance();
+		void read_instance(std::string filename, int inst_size);
 		int get_inst_size();
 		int get_obj_qtd();
 		Matrix& get_dist_matrix();
@@ -62,7 +62,7 @@ class MQap{
 		void apply_best_exploration();
 		void anytime_pareto_local_search();
 		std::vector<Solution> generate_non_dominated_solutions();
-		void path_relinking();
+		std::vector<Solution> path_relinking();
 		bool is_dominated_by_archive_post_processing(Solution& solution, int arch_size);
 		bool has_equal_on_archive(Solution& solution, int arch_size);
 

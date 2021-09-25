@@ -1,20 +1,32 @@
 #include <iostream>
+#include <chrono>
 #include "mQap.h"
 
 int main(int argc, char *argv[]){
 	//Realizando leitura das matrizes de distancia e fluxos, e atribindo as variaveis. 
-	MQap mQap;
-	mQap.read_instance();
+	std::string filename = argv[1];
+	int inst_size = atoi(argv[2]);
 
-	//Solution s1(mQap.get_dist_matrix(), mQap.get_flow1_matrix(), mQap.get_flow2_matrix());
-	//Solution s2(mQap.get_dist_matrix(), mQap.get_flow1_matrix(), mQap.get_flow2_matrix());
-	/*std::vector<Solution> v = mQap.generate_non_dominated_solutions();
+	MQap mQap;
+	mQap.read_instance(filename, inst_size);
 	
-	for(Solution s: v)
-		std::cout << s.costs[0] << " " << s.costs[1] << "\n";
-	*/
-	//for(int i = 0; i < 30; i++)
-		//mQap.path_relinking();
-	mQap.path_relinking();
+
+	std::vector<double> time_total;
+	std::clock_t start, end;
+
+	std::vector<Solution> pf;
+	for(int i = 0; i < 30; i++){
+		start = clock();
+		pf = mQap.path_relinking();
+		end = clock();
+		time_total.push_back(double(end - start) / CLOCKS_PER_SEC);
+	}
+
+
+	for(int i = 0; i < 30; i++){
+		std::cout << time_total[i] << std::endl;
+	}
+
+	//mQap.path_relinking();
 	
 }

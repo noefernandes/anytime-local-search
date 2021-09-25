@@ -124,8 +124,8 @@ Matrix& MQap::get_dist_matrix(){ return dist; }
 Matrix& MQap::get_flow1_matrix(){ return flow1; }
 Matrix& MQap::get_flow2_matrix(){ return flow2; }
 
-void MQap::read_instance(){
-	n = 30;
+void MQap::read_instance(std::string filename, int inst_size){
+	n = inst_size;
 	n_obj = 2;
 	n_sol = 5000;
 
@@ -133,7 +133,8 @@ void MQap::read_instance(){
 	flow1.resize(n);
 	flow2.resize(n);
 
-	std::ifstream file("data/input.txt");
+	std::cout << filename << "--\n";
+	std::ifstream file(filename);
 	std::string line;
 	
   	if(file.is_open()){
@@ -580,28 +581,26 @@ void MQap::anytime_pareto_local_search(){
 
 	archive = archive0;
 
+	/*
 	for(unsigned i(0); i < archive0.size(); i++){
-		/*for(unsigned j(0); j < archive0[0].solution.size(); j++){
-			std::cout << archive0[i].solution[j] << " ";
-		}*/
 		std::cout << "\n" << archive0[i].index << " " <<  archive0[i].costs[0] << " " << archive0[i].costs[1] << "\n";
-	}
+	}*/
 
 
-	std::cout << "\n\n-------------------------------------\n\n";
+	//std::cout << "\n\n-------------------------------------\n\n";
 
 	
 	apply_first_exploration();
 	apply_best_exploration();
 
 	
-	std::cout << "--------------Começo---------------\n";
+	/*std::cout << "--------------Começo---------------\n";
 	for(unsigned i(0); i < archive.size(); i++){
 		std::cout << archive[i].index << " " << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
 	}
 	std::cout << "--------------Fim---------------\n";
 	std::cout << archive.size() << "\n";
-
+	*/
 }
 
 //Testa se a solução atual do arquivo se tornou dominada por alguma outra
@@ -635,7 +634,7 @@ bool MQap::has_equal_on_archive(Solution& solution, int arch_size){
 	return false;
 }
 
-void MQap::path_relinking(){
+std::vector<Solution> MQap::path_relinking(){
 	anytime_pareto_local_search();
 	int arch_size = archive.size();
 
@@ -700,9 +699,10 @@ void MQap::path_relinking(){
 
 	std::cout << "\n";
 	for(unsigned i(0); i < archive.size(); i++){
-		std::cout << archive[i].index << " " << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
+		std::cout << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
 	}
 
-	std::cout << archive.size() << "\n";
+	//std::cout << archive.size() << "\n";
 	
+	return archive;
 }
