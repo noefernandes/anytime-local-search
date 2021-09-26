@@ -11,6 +11,7 @@ int main(int argc, char *argv[]){
 	mQap.read_instance(filename, inst_size);
 	
 
+	/*
 	std::vector<double> time_total;
 	std::clock_t start, end;
 
@@ -26,7 +27,8 @@ int main(int argc, char *argv[]){
 	for(int i = 0; i < 30; i++){
 		std::cout << time_total[i] << std::endl;
 	}
+	*/
 
-	//mQap.path_relinking();
+	mQap.hv_path_relinking();
 	
 }

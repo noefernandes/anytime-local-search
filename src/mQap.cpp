@@ -168,6 +168,16 @@ bool greater(Solution& a, Solution& b){
 	return a.costs[0] > b.costs[0];
 }
 
+bool equal(Solution& s1, Solution& s2){
+	for(size_t i(0); i < s1.solution.size(); i++){
+		if(s1.solution[i] != s2.solution[i]){
+			return false;
+		}
+	}
+
+	return true;
+}
+
 std::vector<Solution> MQap::generate_non_dominated_solutions(){
 	std::vector<Solution> solutions;
 	for(int i(0); i < n_sol; i++){
@@ -587,12 +597,17 @@ void MQap::anytime_pareto_local_search(){
 	}*/
 
 
-	//std::cout << "\n\n-------------------------------------\n\n";
+	std::cout << "Aqui1------------------------------------- " << archive.size() <<"\n\n";
 
 	
 	apply_first_exploration();
+
+	std::cout << "Aqui2------------------------------------- " << archive.size() <<"\n\n";
+
+
 	apply_best_exploration();
 
+	std::cout << "Aqui3------------------------------------- " << archive.size() <<"\n\n";
 	
 	/*std::cout << "--------------Começo---------------\n";
 	for(unsigned i(0); i < archive.size(); i++){
@@ -650,7 +665,7 @@ std::vector<Solution> MQap::path_relinking(){
 				
 				for (int k = 0; k < n; k++){
 					if(candidate.solution[k] != last_solution.solution[k]){
-						//std::cout << "*************************************\n";
+						//std::cout << "2*************************************\n";
 						//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
 						for (int l = k; l < n; l++){
 							if(candidate.solution[l] == last_solution.solution[k]){
@@ -665,7 +680,7 @@ std::vector<Solution> MQap::path_relinking(){
 							
 							pool.push_back(candidate);
 						}*/
-						//std::cout << "*************************************\n";
+						//std::cout << "1*************************************\n";
 					}
 				}
 			
@@ -705,4 +720,48 @@ std::vector<Solution> MQap::path_relinking(){
 	//std::cout << archive.size() << "\n";
 	
 	return archive;
+}
+
+
+std::vector<Solution> MQap::hv_path_relinking(){
+	std::vector<Solution> non_dominated; 
+
+	
+	anytime_pareto_local_search();
+
+	for(int i(0); i < archive.size(); i++){
+		for(int j(0); j < archive.size(); j++){
+			
+			if(i != j){	
+				std::vector<Solution> pool;
+				Solution candidate;
+				Solution last_solution;
+				candidate = archive[i];
+				last_solution = archive[j];
+				
+				for (int k = 0; k < n; k++){
+					if(candidate.solution[k] != last_solution.solution[k]){
+						//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
+						for (int l = k; l < n; l++){
+							if(candidate.solution[l] == last_solution.solution[k]){
+								candidate.swap_solution(candidate.solution[k], candidate.solution[l]);
+								//std::cout << "---" << candidate.index << " " << candidate.costs[0] << " " << candidate.costs[1] << "\n";
+								//Armazenando todos as soluções intermediárias.
+								pool.push_back(candidate);
+							}
+						}
+					}
+				}
+
+				for(int (k); k < pool.size(); k++){
+					hcs(archive, pool[k]);
+				}
+			}
+		}
+		
+	}
+
+
+
+	return non_dominated;
 }
