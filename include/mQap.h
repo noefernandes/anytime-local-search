@@ -2,6 +2,7 @@
 #define MQAP_H
 
 #include <iostream>
+#include <cmath>
 #include <fstream>
 #include <vector>
 #include <chrono>
@@ -29,6 +30,8 @@ struct Solution{
     //Faz uma troca no vetor solução
     void swap_solution(int& a, int& b);
 
+    //Fitness
+    long fitness = 0;
 	//Alocação escolhida
 	std::vector<int> solution;
 	//Vetor de custos (resposta das funções objetivos)
@@ -66,6 +69,7 @@ class MQap{
 		std::vector<Solution> hv_path_relinking();
 		bool is_dominated_by_archive_post_processing(Solution& solution, int arch_size);
 		bool has_equal_on_archive(Solution& solution, int arch_size);
+		long get_fitness(std::vector<Solution>, Solution current);
 
 	private:
 		Matrix dist;

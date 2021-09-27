@@ -30,5 +30,5 @@ int main(int argc, char *argv[]){
 	*/
 
 	mQap.hv_path_relinking();
-	
+	//mQap.path_relinking();
 }

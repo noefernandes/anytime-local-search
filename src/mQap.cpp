@@ -535,7 +535,6 @@ void MQap::apply_best_exploration(){
 				if(non_dominated){
 					for(unsigned k(0); k < arch_size; k++){
 						if(neighbor < archive[k]){
-							//std::cout << archive[k].index << " " << archive[k].costs[0] << " " << archive[k].costs[1] << " " << archive[k].explored << "<-\n";
 							archive.erase(archive.begin() + k);
 							k--;
 							arch_size--;
@@ -574,7 +573,6 @@ void MQap::apply_best_exploration(){
 
 	}while(archive0.size() != 0);
 	
-	//std::cout << "\nentra2----\n";
 }
 
 void MQap::anytime_pareto_local_search(){
@@ -590,32 +588,10 @@ void MQap::anytime_pareto_local_search(){
 	}
 
 	archive = archive0;
-
-	/*
-	for(unsigned i(0); i < archive0.size(); i++){
-		std::cout << "\n" << archive0[i].index << " " <<  archive0[i].costs[0] << " " << archive0[i].costs[1] << "\n";
-	}*/
-
-
-	std::cout << "Aqui1------------------------------------- " << archive.size() <<"\n\n";
-
 	
 	apply_first_exploration();
 
-	std::cout << "Aqui2------------------------------------- " << archive.size() <<"\n\n";
-
-
 	apply_best_exploration();
-
-	std::cout << "Aqui3------------------------------------- " << archive.size() <<"\n\n";
-	
-	/*std::cout << "--------------Começo---------------\n";
-	for(unsigned i(0); i < archive.size(); i++){
-		std::cout << archive[i].index << " " << archive[i].costs[0] << " " << archive[i].costs[1] << "\n";
-	}
-	std::cout << "--------------Fim---------------\n";
-	std::cout << archive.size() << "\n";
-	*/
 }
 
 //Testa se a solução atual do arquivo se tornou dominada por alguma outra
@@ -699,7 +675,6 @@ std::vector<Solution> MQap::path_relinking(){
 
 				for(int k(0); k < arch_size; k++){
 					if(is_dominated_by_archive_post_processing(archive[k], arch_size)){
-						//std::cout << "\napaga" << "\n";
 						archive.erase(archive.begin() + k);
 						arch_size--;
 						k--;
@@ -722,6 +697,62 @@ std::vector<Solution> MQap::path_relinking(){
 	return archive;
 }
 
+long MQap::get_fitness(std::vector<Solution> archive_, Solution current){
+	if(not is_dominated_by_archive_post_processing(current, archive_.size())){
+		int limit = 220000;
+		int greater_y0 = limit;
+		int index_y0;
+		for(size_t l = 0; l < archive_.size(); l++){
+			if(archive_[l].costs[1] - current.costs[1] > 0 and archive_[l].costs[1] - current.costs[1] < greater_y0){
+				greater_y0 = archive_[l].costs[1] - current.costs[1];
+				index_y0 = l;
+			}
+		}
+
+		int greater_y1 = limit;
+		int index_y1;
+		for(size_t l = 0; l < archive_.size(); l++){
+			if((archive_[l].costs[0] - current.costs[0] > 0) and (archive_[l].costs[0] - current.costs[0] < greater_y1)){
+				greater_y1 = archive_[l].costs[0] - current.costs[0];
+				index_y1 = l;
+			}
+		}
+		
+		//std::cout << current.costs[0] << " " << current.costs[1] << std::endl;
+		//std::cout << archive[index_y0].costs[0] << " " << archive[index_y0].costs[1] << std::endl;
+		//std::cout << archive[index_y1].costs[0] << " " << archive[index_y1].costs[1] << std::endl;
+
+		long fitness;
+
+		if(greater_y0 == limit){
+			fitness = ((archive_[index_y1].costs[0] - current.costs[0]) * (limit - current.costs[1]));
+		}else if(greater_y1 == limit){
+			fitness = ((limit - current.costs[0]) * (archive_[index_y0].costs[1] - current.costs[1]));
+		}
+		
+		//std::cout << archive[index_y1].costs[0] - current.costs[0] << std::endl;
+		//std::cout << (archive[index_y0].costs[1] - current.costs[1]) << std::endl;
+		fitness = ((archive_[index_y1].costs[0] - current.costs[0]) * (archive_[index_y0].costs[1] - current.costs[1]));
+
+		return fitness;
+
+	}else{
+		double greater_distance = 0.0;
+		double greater_index;
+
+		for(size_t i = 0; i < archive_.size(); i++){
+			double eixox = std::pow(current.costs[0] - archive_[i].costs[0], 2);
+			double eixoy = std::pow(current.costs[1] - archive_[i].costs[1], 2);
+			double raiz = std::sqrt(eixox + eixoy);
+			if(raiz < greater_distance){
+				greater_distance = raiz;
+				greater_index = i; 
+			}
+		}
+
+		return -((current.costs[0] - archive_[greater_index].costs[0]) * (current.costs[1] - archive_[greater_index].costs[1]));
+	}
+}
 
 std::vector<Solution> MQap::hv_path_relinking(){
 	std::vector<Solution> non_dominated; 
@@ -729,35 +760,39 @@ std::vector<Solution> MQap::hv_path_relinking(){
 	
 	anytime_pareto_local_search();
 
-	for(int i(0); i < archive.size(); i++){
-		for(int j(0); j < archive.size(); j++){
-			
-			if(i != j){	
-				std::vector<Solution> pool;
-				Solution candidate;
-				Solution last_solution;
-				candidate = archive[i];
-				last_solution = archive[j];
-				
-				for (int k = 0; k < n; k++){
-					if(candidate.solution[k] != last_solution.solution[k]){
-						//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
-						for (int l = k; l < n; l++){
-							if(candidate.solution[l] == last_solution.solution[k]){
-								candidate.swap_solution(candidate.solution[k], candidate.solution[l]);
-								//std::cout << "---" << candidate.index << " " << candidate.costs[0] << " " << candidate.costs[1] << "\n";
-								//Armazenando todos as soluções intermediárias.
-								pool.push_back(candidate);
-							}
-						}
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> distrib(0, archive.size() - 1);
+ 	int i = distrib(gen);
+ 	int j = distrib(gen);
+	
+	if(i != j){	
+		std::vector<Solution> pool;
+		Solution candidate;
+		Solution last_solution;
+		candidate = archive[i];
+		last_solution = archive[j];
+		
+		for (int k = 0; k < n; k++){
+			if(candidate.solution[k] != last_solution.solution[k]){
+				//Varrendo o vetor a partir do valor diferente entre a start e last, caso ache, ocorre a troca
+				for (int l = k; l < n; l++){
+					if(candidate.solution[l] == last_solution.solution[k]){
+						candidate.swap_solution(candidate.solution[k], candidate.solution[l]);
+						//std::cout << "---" << candidate.index << " " << candidate.costs[0] << " " << candidate.costs[1] << "\n";
+						//Armazenando todos as soluções intermediárias.
+						pool.push_back(candidate);
 					}
-				}
-
-				for(int (k); k < pool.size(); k++){
-					hcs(archive, pool[k]);
 				}
 			}
 		}
+
+		for(size_t k = 0; k < pool.size(); k++){
+			archive.push_back(pool[k]);
+
+			archive[archive.size() - 1].fitness = get_fitness(archive, archive[archive.size() - 1]);
+		}
+
 		
 	}
 
