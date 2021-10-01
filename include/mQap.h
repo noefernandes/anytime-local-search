@@ -69,7 +69,8 @@ class MQap{
 		std::vector<Solution> hv_path_relinking();
 		bool is_dominated_by_archive_post_processing(Solution& solution, int arch_size);
 		bool has_equal_on_archive(Solution& solution, int arch_size);
-		long get_fitness(std::vector<Solution>, Solution current);
+		long get_fitness(Solution current);
+		std::vector<int> get_neigh_indexes(Solution current);
 
 	private:
 		Matrix dist;

@@ -7,6 +7,8 @@ int n_obj;
 //Numero de solucoes inicialmente no arquivo
 int n_sol;
 
+int limit = 220000;
+
 Solution::Solution(){}
 
 Solution::Solution(Matrix& dist, Matrix& flow1, Matrix& flow2){
@@ -697,52 +699,36 @@ std::vector<Solution> MQap::path_relinking(){
 	return archive;
 }
 
-long MQap::get_fitness(std::vector<Solution> archive_, Solution current){
-	if(not is_dominated_by_archive_post_processing(current, archive_.size())){
+std::vector<int> MQap::get_neigh_indexes(Solution current){
+	if(not is_dominated_by_archive_post_processing(current, archive.size())){
 		int limit = 220000;
 		int greater_y0 = limit;
-		int index_y0;
-		for(size_t l = 0; l < archive_.size(); l++){
-			if(archive_[l].costs[1] - current.costs[1] > 0 and archive_[l].costs[1] - current.costs[1] < greater_y0){
-				greater_y0 = archive_[l].costs[1] - current.costs[1];
+		int index_y0 = -1;
+		for(size_t l = 0; l < archive.size(); l++){
+			if((archive[l].costs[1] - current.costs[1] > 0) and (archive[l].costs[1] - current.costs[1] < greater_y0)){
+				greater_y0 = archive[l].costs[1] - current.costs[1];
 				index_y0 = l;
 			}
 		}
 
 		int greater_y1 = limit;
-		int index_y1;
-		for(size_t l = 0; l < archive_.size(); l++){
-			if((archive_[l].costs[0] - current.costs[0] > 0) and (archive_[l].costs[0] - current.costs[0] < greater_y1)){
-				greater_y1 = archive_[l].costs[0] - current.costs[0];
+		int index_y1 = -1;
+		for(size_t l = 0; l < archive.size(); l++){
+			if((archive[l].costs[0] - current.costs[0] > 0) and (archive[l].costs[0] - current.costs[0] < greater_y1)){
+				greater_y1 = archive[l].costs[0] - current.costs[0];
 				index_y1 = l;
 			}
 		}
-		
-		//std::cout << current.costs[0] << " " << current.costs[1] << std::endl;
-		//std::cout << archive[index_y0].costs[0] << " " << archive[index_y0].costs[1] << std::endl;
-		//std::cout << archive[index_y1].costs[0] << " " << archive[index_y1].costs[1] << std::endl;
 
-		long fitness;
-
-		if(greater_y0 == limit){
-			fitness = ((archive_[index_y1].costs[0] - current.costs[0]) * (limit - current.costs[1]));
-		}else if(greater_y1 == limit){
-			fitness = ((limit - current.costs[0]) * (archive_[index_y0].costs[1] - current.costs[1]));
-		}
-		
-		//std::cout << archive[index_y1].costs[0] - current.costs[0] << std::endl;
-		//std::cout << (archive[index_y0].costs[1] - current.costs[1]) << std::endl;
-		fitness = ((archive_[index_y1].costs[0] - current.costs[0]) * (archive_[index_y0].costs[1] - current.costs[1]));
-
-		return fitness;
+		return std::vector<int>({index_y0, index_y1});
 
 	}else{
 		double greater_distance = 0.0;
-		double greater_index;
+		int greater_index;
 
-		for(size_t i = 0; i < archive_.size(); i++){
-			double eixox = std::pow(current.costs[0] - archive_[i].costs[0], 2);
-			double eixoy = std::pow(current.costs[1] - archive_[i].costs[1], 2);
+		for(size_t i = 0; i < archive.size(); i++){
+			double eixox = std::pow(current.costs[0] - archive[i].costs[0], 2);
+			double eixoy = std::pow(current.costs[1] - archive[i].costs[1], 2);
 			double raiz = std::sqrt(eixox + eixoy);
 			if(raiz < greater_distance){
 				greater_distance = raiz;
@@ -750,7 +736,67 @@ long MQap::get_fitness(std::vector<Solution> archive_, Solution current){
 			}
 		}
 
-		return -((current.costs[0] - archive_[greater_index].costs[0]) * (current.costs[1] - archive_[greater_index].costs[1]));
+		return std::vector<int>({greater_index});
+	}
+}
+
+long MQap::get_fitness(Solution current){
+	//std::cout << "**********\n";
+
+	if(not is_dominated_by_archive_post_processing(current, archive.size())){
+		//int limit = 220000;
+		int greater_y0 = limit;
+		int index_y0;
+		for(size_t l = 0; l < archive.size(); l++){
+			if((archive[l].costs[1] - current.costs[1] > 0) and (archive[l].costs[1] - current.costs[1] < greater_y0)){
+				greater_y0 = archive[l].costs[1] - current.costs[1];
+				index_y0 = l;
+			}
+		}
+
+		int greater_y1 = limit;
+		int index_y1;
+		for(size_t l = 0; l < archive.size(); l++){
+			if((archive[l].costs[0] - current.costs[0] > 0) and (archive[l].costs[0] - current.costs[0] < greater_y1)){
+				greater_y1 = archive[l].costs[0] - current.costs[0];
+				index_y1 = l;
+			}
+		}
+
+		long fitness;
+
+		if(greater_y0 == limit){
+			fitness = ((archive[index_y1].costs[0] - current.costs[0]) * (limit - current.costs[1]));
+		}else if(greater_y1 == limit){
+			fitness = ((limit - current.costs[0]) * (archive[index_y0].costs[1] - current.costs[1]));
+		}else{
+
+		/*std::cout << "aqui 1\n";
+		std::cout << index_y1 << "\n";
+		std::cout << index_y0 << "\n";
+		
+		std::cout << archive[index_y1].costs[0] - current.costs[0] << std::endl;
+		std::cout << (archive[index_y0].costs[1] - current.costs[1]) << std::endl;
+		*/
+		fitness = ((archive[index_y1].costs[0] - current.costs[0]) * (archive[index_y0].costs[1] - current.costs[1]));
+		}
+		return fitness;
+
+	}else{
+		double greater_distance = 0.0;
+		double greater_index;
+
+		for(size_t i = 0; i < archive.size(); i++){
+			double eixox = std::pow(current.costs[0] - archive[i].costs[0], 2);
+			double eixoy = std::pow(current.costs[1] - archive[i].costs[1], 2);
+			double raiz = std::sqrt(eixox + eixoy);
+			if(raiz < greater_distance){
+				greater_distance = raiz;
+				greater_index = i; 
+			}
+		}
+
+		return -((current.costs[0] - archive[greater_index].costs[0]) * (current.costs[1] - archive[greater_index].costs[1]));
 	}
 }
 
@@ -759,6 +805,10 @@ std::vector<Solution> MQap::hv_path_relinking(){
 
 	
 	anytime_pareto_local_search();
+
+	for(size_t l = 0; l < archive.size(); l++){
+		archive[l].fitness = get_fitness(archive[l]);
+	}
 
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -789,14 +839,175 @@ std::vector<Solution> MQap::hv_path_relinking(){
 
 		for(size_t k = 0; k < pool.size(); k++){
 			archive.push_back(pool[k]);
+			size_t curr_index = archive.size() - 1;
+			//Atualiza solução atual
+			archive[curr_index].fitness = get_fitness(archive[curr_index]);
 
-			archive[archive.size() - 1].fitness = get_fitness(archive, archive[archive.size() - 1]);
+			//Pega custos da solução atual para calcular novo fitness
+			double f0 = archive[curr_index].costs[0];
+			double f1 = archive[curr_index].costs[1];
+
+			//Atualiza o resto das soluções
+			for(size_t l = 0; l < archive.size(); l++){
+				if(is_dominated_by_archive_post_processing(archive[l], archive.size())){
+					archive[l].fitness = get_fitness(archive[l]);					
+				}else{
+					Solution current = archive[l];
+					std::vector<int> neigh_indexes = get_neigh_indexes(archive[l]);
+					
+					//Retira solução atual
+					archive.erase(archive.begin() + l);
+
+					//Se for dominada, apenas atualiza
+					if(neigh_indexes.size() == 1){
+						archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]);
+					//Se for não dominada, atualiza também os vizinhos
+					}else if(neigh_indexes.size() == 2){
+						if(neigh_indexes[0] != -1){
+							if(neigh_indexes[0] > l)
+								neigh_indexes[0]--;
+
+							if(neigh_indexes[1] != -1)
+								archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+																(f0 - archive[neigh_indexes[0]].costs[0]) / 
+							     								(archive[neigh_indexes[1]].costs[0] - archive[neigh_indexes[0]].costs[0]);
+							else
+								archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+																(f0 - archive[neigh_indexes[0]].costs[0]) / 
+							     								(limit - archive[neigh_indexes[0]].costs[0]);
+						}
+
+						if(neigh_indexes[1] != -1){
+							if(neigh_indexes[1] > l)
+								neigh_indexes[1]--;
+
+							if(neigh_indexes[0] != -1)
+								archive[neigh_indexes[1]].fitness = get_fitness(archive[neigh_indexes[1]]) *
+																(f1 - archive[neigh_indexes[1]].costs[1]) /
+																(archive[neigh_indexes[0]].costs[1] - archive[neigh_indexes[1]].costs[1]);
+							else
+								archive[neigh_indexes[1]].fitness = get_fitness(archive[neigh_indexes[1]]) *
+																(f1 - archive[neigh_indexes[1]].costs[1]) /
+																(limit - archive[neigh_indexes[1]].costs[1]);
+						}
+					}
+
+					//Reinsere solução
+					archive.insert(archive.begin() + l, current);
+				}
+			}
+
+			//Encontrando pior solução
+			int worst_index = -1;
+			long worst = 99999999;
+			for(size_t l = 0; l < archive.size(); l++){
+				if(archive[l].fitness < worst){
+					worst = archive[l].fitness;
+					worst_index = l;
+				}
+			}
+
+			//Pegando vizinhos da pior solução
+			std::vector<int> neigh_indexes = get_neigh_indexes(archive[worst_index]);
+
+			Solution removed = archive[worst_index];
+
+			//Retirando pior solução da população
+			archive.erase(archive.begin() + worst_index);
+
+			if(not is_dominated_by_archive_post_processing(archive[worst_index], archive.size())){
+				//Se for não dominada, atualiza também os vizinhos
+				if(neigh_indexes.size() == 2){
+					if(neigh_indexes[0] != -1){
+						if(neigh_indexes[0] > worst_index)
+							neigh_indexes[0]--;
+
+						if(neigh_indexes[1] != -1)
+							archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+															(archive[neigh_indexes[1]].costs[0] - archive[neigh_indexes[0]].costs[0]) / 
+						     								(removed.costs[0] - archive[neigh_indexes[0]].costs[0]);
+						else
+							archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+															(limit - archive[neigh_indexes[0]].costs[0]) / 
+						     								(removed.costs[0] - archive[neigh_indexes[0]].costs[0]);
+					}
+
+					if(neigh_indexes[1] != -1){
+						if(neigh_indexes[1] > worst_index)
+							neigh_indexes[1]--;
+
+						if(neigh_indexes[0] != -1)
+							archive[neigh_indexes[1]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+															(archive[neigh_indexes[0]].costs[1] - archive[neigh_indexes[1]].costs[1]) / 
+						     								(removed.costs[1] - archive[neigh_indexes[1]].costs[1]);
+						else
+							archive[neigh_indexes[1]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+															(limit - archive[neigh_indexes[1]].costs[1]) / 
+						     								(removed.costs[1] - archive[neigh_indexes[1]].costs[1]);
+					}
+				}	
+			}
+
+			//Atualiza o resto das soluções
+			for(size_t l = 0; l < archive.size(); l++){
+				if(is_dominated_by_archive_post_processing(archive[l], archive.size())){
+					archive[l].fitness = get_fitness(archive[l]);					
+				}else{
+					Solution current = archive[l];
+					std::vector<int> neigh_indexes = get_neigh_indexes(archive[l]);
+					
+					//Retira solução atual
+					archive.erase(archive.begin() + l);
+
+					//Se for dominada, apenas atualiza
+					if(neigh_indexes.size() == 1){
+						archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]);
+					//Se for não dominada, atualiza também os vizinhos
+					}else if(neigh_indexes.size() == 2){
+						if(neigh_indexes[0] != -1){
+							if(neigh_indexes[0] > l)
+								neigh_indexes[0]--;
+
+							if(neigh_indexes[1] != -1)
+								archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+																(f0 - archive[neigh_indexes[0]].costs[0]) / 
+							     								(archive[neigh_indexes[1]].costs[0] - archive[neigh_indexes[0]].costs[0]);
+							else
+								archive[neigh_indexes[0]].fitness = get_fitness(archive[neigh_indexes[0]]) * 
+																(f0 - archive[neigh_indexes[0]].costs[0]) / 
+							     								(limit - archive[neigh_indexes[0]].costs[0]);
+						}
+
+						if(neigh_indexes[1] != -1){
+							if(neigh_indexes[1] > l)
+								neigh_indexes[1]--;
+
+							if(neigh_indexes[0] != -1)
+								archive[neigh_indexes[1]].fitness = get_fitness(archive[neigh_indexes[1]]) *
+																(f1 - archive[neigh_indexes[1]].costs[1]) /
+																(archive[neigh_indexes[0]].costs[1] - archive[neigh_indexes[1]].costs[1]);
+							else
+								archive[neigh_indexes[1]].fitness = get_fitness(archive[neigh_indexes[1]]) *
+																(f1 - archive[neigh_indexes[1]].costs[1]) /
+																(limit - archive[neigh_indexes[1]].costs[1]);
+						}
+					}
+
+					//Reinsere solução
+					archive.insert(archive.begin() + l, current);
+				}
+			}
+
 		}
 
 		
 	}
 
 
+	std::cout << "Tamanho: " << archive.size() << std::endl;
+	for(int i = 0; i < archive.size(); i++){
+		std::cout << archive.at(i).costs[0] << " " << archive.at(i).costs[1] << std::endl;
+	}
 
 	return non_dominated;
 }
